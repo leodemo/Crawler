@@ -1,0 +1,195 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd">
+                        
+	<!-- #基本参数设置，picpath为图片保存路径，locations为ip所在地1巴基斯坦，2美国，3印度 -->
+    <bean id="config" class="com.spider.bean.NewsConfig">
+    	<!--#picpath为图片保存路径-->
+        <property name="picpath" value="F:\\housepic"/>
+        <!--#picpath为图片保存路径用于Linux下的-->
+        <property name="linuxPicPath" value="/opt/pic"/>
+        <!--#locations为ip所在地1巴基斯坦，2美国，3印度，0表示不设置地区-->
+        <property name="locations" value="0"/>
+        <!--#language表示新闻语言，1表示英语，0表示不设置语言-->
+        <property name="language" value="1"/>
+        <!--#爬取新闻内容的线程数-->
+        <property name="contentSpiderNum" value="10"/>
+        <!--#url爬虫的线程数-->
+        <property name="urlSpiderNum" value="5"/>
+        <!--#两轮爬虫之间的间隔时间，单位（分）-->
+        <property name="interval" value="1"/>
+        <!--#爬虫时的数据读取超时设置-->
+        <property name="socketTimeOut" value="6000"/>
+        <!--#爬虫时的数据连接超时设置-->
+        <property name="connectTimeOut" value="6000"/>
+        <!--#爬虫时的数据请求超时设置-->
+        <property name="connectionRequestTimeout" value="6000"/>
+        <!--#节点IP地址，用于标示节点-->
+		<property name="ip" value=""/>
+		<!--#url的错误次数，若某个url错误次数大于，说明无法正确爬取或解析-->
+		<property name="retry" value="6"/>
+    </bean>
+    
+    <!-- #数据库的基本参数设置 -->
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	    <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+	    <property name="url" value="jdbc:mysql://127.0.0.1:3306/house_crawler" />
+	    <property name="username" value="root" />
+	    <property name="password" value="Root123!" />
+	    <!-- #最大连接数据库连接数,设 0 为没有限制 -->
+		<property name="maxActive">
+			<value>60</value>
+		</property>
+		<!-- #最大空闲值.当经过一个高峰时间后，连接池可以慢慢将已经用不到的连接慢慢释放一部分，一直减少到maxIdle为止。设 0 为没有限制  -->
+		<property name="maxIdle">
+			<value>50</value>
+		</property>
+		<!-- 最大等待毫秒数, 单位为 ms, 超过时间会出错误信息 -->
+		<property name="maxWait">
+			<value>1000</value>
+		</property>
+		<property name="defaultAutoCommit">
+			<value>true</value>
+		</property>
+		<!-- 增加连接池清除超时连接的属性 -->
+		<property name="testWhileIdle" value="true"></property>
+		<property name="timeBetweenEvictionRunsMillis" value="60000"></property>
+	</bean>   
+	
+	<!-- 设置本地数据库 -->
+	<bean id="localdatasource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+	    <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+	    <property name="url" value="jdbc:mysql://127.0.0.1:3306/house_crawler" />
+	    <property name="username" value="root" />
+	    <property name="password" value="Root123!" />
+	    <!-- #最大连接数据库连接数,设 0 为没有限制 -->
+		<property name="maxActive">
+			<value>50</value>
+		</property>
+		<!-- #最大空闲值.当经过一个高峰时间后，连接池可以慢慢将已经用不到的连接慢慢释放一部分，一直减少到maxIdle为止。设 0 为没有限制  -->
+		<property name="maxIdle">
+			<value>20</value>
+		</property>
+		<!-- 最大等待毫秒数, 单位为 ms, 超过时间会出错误信息 -->
+		<property name="maxWait">
+			<value>1000</value>
+		</property>
+		<property name="defaultAutoCommit">
+			<value>true</value>
+		</property>
+		<!-- 增加连接池清除超时连接的属性 -->
+		<property name="testWhileIdle" value="true"></property>
+		<property name="timeBetweenEvictionRunsMillis" value="300000"></property>
+	</bean>
+
+	<!-- 新闻 start-->
+	<bean id="siteDB" class="com.spider.daoImpl.SitetemplateDaoImpl">
+		<property name="tableName" value="news_sitetemplate"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="config" ref="config"/>
+	</bean>
+
+	<!-- newsurl是放在本地数据库，因此ref为localdatasource -->
+	<bean id="newsurl" class="com.spider.daoImpl.UrlDaoImpl">
+		<property name="tableName" value="news_tmpurl"/>
+		<property name="dataSource" ref="localdatasource"/>
+	</bean>
+
+	<bean id="news" class="com.spider.daoImpl.DataDaoImpl">
+		<property name="config" ref="config"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="tableName" value="news"/>
+	</bean>
+	<!-- 新闻 end-->
+
+	<!-- 二手房 start-->
+	<bean id="houseSiteDB" class="com.spider.daoImpl.HouseSitetemplateDaoImpl">
+		<property name="tableName" value="house_sitetemplate"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="config" ref="config"/>
+	</bean>
+	<!-- newsurl是放在本地数据库，因此ref为localdatasource -->
+	<bean id="houseurl" class="com.spider.daoImpl.UrlDaoImpl">
+		<property name="tableName" value="house_tmpurl"/>
+		<property name="dataSource" ref="localdatasource"/>
+	</bean>
+	<bean id="house" class="com.spider.daoImpl.HouseDaoImpl">
+		<property name="config" ref="config"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="tableName" value="house"/>
+	</bean>
+	<!-- 二手房 end-->
+
+
+	<!-- 小区 start-->
+	<bean id="communitySiteDB" class="com.spider.daoImpl.CommunitySitetemplateDaoImpl">
+		<property name="tableName" value="community_sitetemplate"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="config" ref="config"/>
+	</bean>
+	<!-- newsurl是放在本地数据库，因此ref为localdatasource -->
+	<bean id="communityurl" class="com.spider.daoImpl.UrlDaoImpl">
+		<property name="tableName" value="community_tmpurl"/>
+		<property name="dataSource" ref="localdatasource"/>
+	</bean>
+	<bean id="community" class="com.spider.daoImpl.CommunityDaoImpl">
+		<property name="config" ref="config"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="tableName" value="community"/>
+	</bean>
+	<!-- 小区 end-->
+
+	<!-- 成交 start-->
+	<bean id="dealSiteDB" class="com.spider.daoImpl.DealSitetemplateDaoImpl">
+		<property name="tableName" value="deal_sitetemplate"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="config" ref="config"/>
+	</bean>
+	<!-- newsurl是放在本地数据库，因此ref为localdatasource -->
+	<bean id="dealurl" class="com.spider.daoImpl.UrlDaoImpl">
+		<property name="tableName" value="deal_tmpurl"/>
+		<property name="dataSource" ref="localdatasource"/>
+	</bean>
+	<bean id="deal" class="com.spider.daoImpl.DealDaoImpl">
+		<property name="config" ref="config"/>
+		<property name="dataSource" ref="dataSource"/>
+		<property name="tableName" value="deal"/>
+	</bean>
+	<!-- 成交 end-->
+	
+	<!--<bean id="web" class="spider.daoImpl.WebDaoImpl">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="web_pubtime"/>-->
+	<!--</bean>-->
+	
+	<!--<bean id="datastatistics" class="spider.daoImpl.DataStatisticsDaoImpl">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="datastatistic_test"/>-->
+	<!--</bean>-->
+	
+	<!--<bean id="keywords" class="spider.daoImpl.KeyWordsDaoImpl">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="keyword"/>-->
+	<!--</bean>-->
+	
+	<!--<bean id="china" class="spider.daoImpl.China">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="temp_shck"/>-->
+	<!--</bean>-->
+	<!---->
+	<!--<bean id="tendency" class="spider.daoImpl.TendencyDaoImpl">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="temp_qxx"/>-->
+	<!--</bean>-->
+	<!---->
+	<!--<bean id="citylocations" class="spider.daoImpl.CityLocationsDaoImpl">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="citylocations"/>-->
+	<!--</bean>-->
+	
+	<!--<bean id="newsgeo" class="spider.daoImpl.NewsGeoDaoImpl">-->
+		<!--<property name="dataSource" ref="dataSource"/>-->
+		<!--<property name="tableName" value="news_geo_info_tmp"/>-->
+	<!--</bean>-->
+</beans>
